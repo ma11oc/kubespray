@@ -1,0 +1,60 @@
+---
+- name: DigitalOcean Provisioner | Check digitalocean_provisioner_access_token value
+  fail:
+    msg: "digitalocean_provisioner_access_token is missing"
+  when: digitalocean_provisioner_access_token is not defined or not digitalocean_provisioner_access_token
+
+- name: DigitalOcean Provisioner | Create addon dir
+  file:
+    path: "{{ kube_config_dir }}/addons/digitalocean_provisioner"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+  when:
+    - inventory_hostname == groups['kube-master'][0]
+
+- name: DigitalOcean Provisioner | Templates list
+  set_fact:
+    digitalocean_provisioner_templates:
+      - { name: do-provisioner-ns, file: do-provisioner-ns.yml, type: ns }
+      - { name: do-provisioner-secret, file: do-provisioner-secret.yml, type: secret }
+      - { name: do-provisioner-csidriver, file: do-provisioner-csidriver.yml, type: csidriver }
+      - { name: do-provisioner-crd-volumesnapshotclasses, file: do-provisioner-crd-volumesnapshotclasses.yml, type: crd }
+      - { name: do-provisioner-crd-volumesnapshotcontents, file: do-provisioner-crd-volumesnapshotcontents.yml, type: crd }
+      - { name: do-provisioner-crd-volumesnapshots, file: do-provisioner-crd-volumesnapshots.yml, type: crd }
+      - { name: do-provisioner-volumesnapshotclass, file: do-provisioner-volumesnapshotclass.yml, type: volumesnapshotclass }
+      - { name: do-provisioner-sc, file: do-provisioner-sc.yml, type: sc }
+      - { name: do-provisioner-sts-controller, file: do-provisioner-sts-controller.yml, type: sts }
+      - { name: do-provisioner-sa-controller, file: do-provisioner-sa-controller.yml, type: sa }
+      - { name: do-provisioner-clusterrole-provisioner, file: do-provisioner-clusterrole-provisioner.yml, type: clusterrole }
+      - { name: do-provisioner-clusterrolebinding-provisioner, file: do-provisioner-clusterrolebinding-provisioner.yml, type: clusterrolebinding }
+      - { name: do-provisioner-clusterrole-attacher, file: do-provisioner-clusterrole-attacher.yml, type: clusterrole }
+      - { name: do-provisioner-clusterrolebinding-attacher, file: do-provisioner-clusterrolebinding-attacher.yml, type: clusterrolebinding }
+      - { name: do-provisioner-clusterrole-snapshotter, file: do-provisioner-clusterrole-snapshotter.yml, type: clusterrole }
+      - { name: do-provisioner-clusterrolebinding-snapshotter, file: do-provisioner-clusterrolebinding-snapshotter.yml, type: clusterrolebinding }
+      - { name: do-provisioner-clusterrole-resizer, file: do-provisioner-clusterrole-resizer.yml, type: clusterrole }
+      - { name: do-provisioner-clusterrolebinding-resizer, file: do-provisioner-clusterrolebinding-resizer.yml, type: clusterrolebinding }
+      - { name: do-provisioner-ds-node, file: do-provisioner-ds-node.yml, type: ds }
+      - { name: do-provisioner-sa-node, file: do-provisioner-sa-node.yml, type: sa }
+      - { name: do-provisioner-clusterrole-resizer, file: do-provisioner-clusterrole-resizer.yml, type: clusterrole }
+      - { name: do-provisioner-clusterrolebinding-resizer, file: do-provisioner-clusterrolebinding-resizer.yml, type: clusterrolebinding }
+
+- name: DigitalOcean Provisioner | Create manifests
+  template:
+    src: "{{ item.file }}.j2"
+    dest: "{{ kube_config_dir }}/addons/digitalocean_provisioner/{{ item.file }}"
+  with_items: "{{ digitalocean_provisioner_templates }}"
+  register: digitalocean_provisioner_manifests
+  when: inventory_hostname == groups['kube-master'][0]
+
+- name: DigitalOcean Provisioner | Apply manifests
+  kube:
+    name: "{{ item.item.name }}"
+    namespace: "{{ digitalocean_provisioner_namespace }}"
+    kubectl: "{{ bin_dir }}/kubectl"
+    resource: "{{ item.item.type }}"
+    filename: "{{ kube_config_dir }}/addons/digitalocean_provisioner/{{ item.item.file }}"
+    state: "latest"
+  with_items: "{{ digitalocean_provisioner_manifests.results }}"
+  when: inventory_hostname == groups['kube-master'][0]

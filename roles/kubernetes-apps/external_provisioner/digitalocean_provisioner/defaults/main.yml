@@ -1,0 +1,5 @@
+---
+digitalocean_provisioner_enabled: false
+digitalocean_provisioner_access_token: "{{ lookup('env','DIGITALOCEAN_TOKEN') }}"
+digitalocean_provisioner_namespace: do-provisioner
+digitalocean_provisioner_storage_class: do-block-storage

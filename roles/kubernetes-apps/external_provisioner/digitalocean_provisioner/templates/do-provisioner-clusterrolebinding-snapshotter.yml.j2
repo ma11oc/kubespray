@@ -1,0 +1,13 @@
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: csi-do-snapshotter-binding
+subjects:
+  - kind: ServiceAccount
+    name: csi-do-controller-sa
+    namespace: "{{ digitalocean_provisioner_namespace }}"
+roleRef:
+  kind: ClusterRole
+  name: csi-do-snapshotter-role
+  apiGroup: rbac.authorization.k8s.io

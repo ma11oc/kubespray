@@ -1,0 +1,9 @@
+---
+kind: VolumeSnapshotClass
+apiVersion: snapshot.storage.k8s.io/v1alpha1
+metadata:
+  name: do-block-storage
+  namespace: "{{ digitalocean_provisioner_namespace }}"
+  annotations:
+    snapshot.storage.kubernetes.io/is-default-class: "true"
+snapshotter: dobs.csi.digitalocean.com
