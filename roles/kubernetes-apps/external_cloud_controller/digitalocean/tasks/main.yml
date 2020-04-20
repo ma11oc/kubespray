@@ -1,0 +1,35 @@
+---
+- name: External DigitalOcean Cloud Controller | check external_digitalocean_access_token value
+  fail:
+    msg: "external_digitalocean_access_token is missing"
+  when: external_digitalocean_access_token is not defined or not external_digitalocean_access_token
+
+- name: External DigitalOcean Cloud Controller | Generate Manifests
+  template:
+    src: "{{ item.file }}.j2"
+    dest: "{{ kube_config_dir }}/{{ item.file }}"
+  with_items:
+    - {name: external-digitalocean-cloud-controller-manager-ns, file: external-digitalocean-cloud-controller-manager-ns.yml}
+    - {name: external-digitalocean-cloud-controller-manager-secret, file: external-digitalocean-cloud-controller-manager-secret.yml}
+    - {name: external-digitalocean-cloud-controller-manager-deployment, file: external-digitalocean-cloud-controller-manager-deployment.yml}
+    - {name: external-digitalocean-cloud-controller-manager-sa, file: external-digitalocean-cloud-controller-manager-sa.yml}
+    - {name: external-digitalocean-cloud-controller-manager-clusterrole, file: external-digitalocean-cloud-controller-manager-clusterrole.yml}
+    - {name: external-digitalocean-cloud-controller-manager-clusterrolebinding, file: external-digitalocean-cloud-controller-manager-clusterrolebinding.yml}
+
+  register: external_digitalocean_manifests
+  when: inventory_hostname == groups['kube-master'][0]
+  tags: external-digitalocean
+
+- name: External DigitalOcean Cloud Controller | Apply Manifests
+  kube:
+    kubectl: "{{ bin_dir }}/kubectl"
+    filename: "{{ kube_config_dir }}/{{ item.item.file }}"
+    state: "latest"
+  with_items:
+    - "{{ external_digitalocean_manifests.results }}"
+  when:
+    - inventory_hostname == groups['kube-master'][0]
+    - not item is skipped
+  loop_control:
+    label: "{{ item.item.file }}"
+  tags: external-digitalocean

@@ -1,0 +1,3 @@
+---
+external_digitalocean_access_token: "{{ lookup('env','DIGITALOCEAN_TOKEN') }}"
+external_digitalocean_namespace: do-cloud-controller-manager
