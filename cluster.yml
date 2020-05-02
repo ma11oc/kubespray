@@ -59,7 +59,8 @@
   gather_facts: False
   any_errors_fatal: "{{ any_errors_fatal | default(true) }}"
   roles:
-    - { role: kubespray-defaults }
+    - role: kubespray-defaults
+      tags: etcd
     - role: etcd
       tags: etcd
       vars:
@@ -135,7 +136,7 @@
   gather_facts: False
   any_errors_fatal: "{{ any_errors_fatal | default(true) }}"
   roles:
-    - { role: kubespray-defaults, tags: always }
+    - { role: kubespray-defaults, tags: apps }
     - { role: kubernetes-apps, tags: apps }
   environment: "{{ proxy_env }}"
 
